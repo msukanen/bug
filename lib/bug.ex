@@ -4,19 +4,6 @@ defmodule Bug do
   """
   use Bitwise
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Bug.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
-
   defp base64_set do 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' end
   defp base64_str do "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" end
 
