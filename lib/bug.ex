@@ -32,10 +32,8 @@ defmodule Bug do
     end
     String.slice((split(3, s) |> Enum.map(fn <<a,b,c>> ->
       n = ((0xff &&& a)<<<16) + ((0xff &&& b) <<<8) + (0xff &&& c)
-      <<Enum.at(base64_set(), (0x3f &&& (n >>> 18))),
-        Enum.at(base64_set(), (0x3f &&& (n >>> 12))),
-        Enum.at(base64_set(), (0x3f &&& (n >>>  6))),
-        Enum.at(base64_set(), (0x3f &&&  n))>>
+      e = fn (x,y) -> Enum.at(base64_set(), (0x3f &&& (x >>> y))) end
+      <<e(n,18), e(n,12), e(n,6), e(n,0)>>
     end) |> Enum.join ), 0..-(String.length(pad)+1)) <> pad
   end
 
