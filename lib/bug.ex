@@ -30,11 +30,14 @@ defmodule Bug do
         2-> ["=", s <> <<0>>]
         _-> ["", s]
     end
-    String.slice((split(3, s) |> Enum.map(fn <<a,b,c>> ->
-      n = ((0xff &&& a)<<<16) + ((0xff &&& b) <<<8) + (0xff &&& c)
-      e = fn (x,y) -> Enum.at(base64_set(), (0x3f &&& (x >>> y))) end
-      <<e(n,18), e(n,12), e(n,6), e(n,0)>>
-    end) |> Enum.join ), 0..-(String.length(pad)+1)) <> pad
+    ((split(3, s)
+      |> Enum.map(fn <<a,b,c>> ->
+          n = ((0xff &&& a)<<<16) + ((0xff &&& b) <<<8) + (0xff &&& c)
+          e = fn (x,y) -> Enum.at(base64_set(), (0x3f &&& (x >>> y))) end
+          <<e.(n,18), e.(n,12), e.(n,6), e.(n,0)>>
+        end) |> Enum.join )
+      |> String.slice(0..-(String.length(pad)+1))
+    ) <> pad
   end
 
   @doc """
@@ -50,17 +53,19 @@ defmodule Bug do
     if (rem( String.length(s), 4) !== 0) do raise {:error, "Data { s } does not comply with BASE64 encoding spec"} end
     s = (fn
       c,_,s when c == "==" -> String.slice(s, 0..-3) <> "AA"
-      _,c,s when c == "=" -> String.slice(s, 0..-2) <> "A"
+      _,c,s when c == "="  -> String.slice(s, 0..-2) <> "A"
       _,_,s -> s
-    end).(String.slice(s, (-2)..(-1)), String.slice(s, -1..-1), s)
+    end).(String.slice(s, -2..-1), String.slice(s, -1..-1), s)
     id = fn x -> {r,_} = :binary.match(base64_str(), List.to_string([x])); r end
-    [h|t] = split(4,s) |> Enum.map(fn <<a,b,c,d>> ->
-        n = (id.(a) <<< 18) + (id.(b) <<< 12) + (id.(c) <<<  6) +  id.(d)
-        <<0xff &&& (n >>> 16), 0xff &&& (n >>>  8), 0xff &&&  n>>
-      end) |> Enum.reverse
-    chp = fn <<x,y,_>> when y == 0 -> <<x>>
+    [h|t] = split(4,s)
+      |> Enum.map(fn <<a,b,c,d>> ->
+          n = (id.(a) <<< 18) + (id.(b) <<< 12) + (id.(c) <<<  6) +  id.(d)
+          <<0xff &&& (n >>> 16), 0xff &&& (n >>>  8), 0xff &&&  n>>
+        end)
+      |> Enum.reverse
+    ((Enum.reverse t) |> Enum.join)
+      <> (fn <<x,y,_>> when y == 0 -> <<x>>
              <<x,y,z>> when z == 0 -> <<x,y>>
-             <<x,y,z>> -> <<x,y,z>> end
-    ((Enum.reverse t) |> Enum.join) <> chp.(h)
+             <<x,y,z>> -> <<x,y,z>> end).(h)
   end
 end
