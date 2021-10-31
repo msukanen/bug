@@ -1,6 +1,7 @@
 defmodule Bug do
+defmodule Base64 do
   @moduledoc """
-  Documentation for `Bug`.
+  Documentation for `Base64`.
   """
   use Bitwise
 
@@ -19,7 +20,7 @@ defmodule Bug do
 
   ## Examples
 
-      iex> Bug.encode("This is a string")
+      iex> Bug.Base64.encode("This is a string")
       "VGhpcyBpcyBhIHN0cmluZw=="
 
   """
@@ -45,12 +46,32 @@ defmodule Bug do
 
   ## Examples
 
-      iex> Bug.decode("VGhpcyBpcyBhIHN0cmluZw==")
+      iex> Bug.Base64.decode!("VGhpcyBpcyBhIHN0cmluZw==")
+      "This is a string"
+
+      iex> Bug.Base64.decode!("VGhpcyBpcyBhIHN0cmluZw==", &Cleanse.cleanse/1)
       "This is a string"
 
   """
-  def decode(s) do
-    if (rem( String.length(s), 4) !== 0) do raise {:error, "Data { s } does not comply with BASE64 encoding spec"} end
+  def decode!(s), do: decode!(s, &Cleanse.cleanse/1)
+  def decode!(s, cfn) do
+    s = cfn.(s)
+    if (rem( String.length(s), 4) !== 0)
+      do raise {:error, "Data { s } does not comply with BASE64 encoding spec"}
+    end
+    decode(s)
+  end
+
+  @doc """
+  Decode base64 encoded chunk.
+
+  ## Examples
+
+      iex> Bug.Base64.decode("VGhpcyBpcyBhIHN0cmluZw==")
+      "This is a string"
+
+  """
+  defp decode(s) do
     s = (fn
       c,_,s when c == "==" -> String.slice(s, 0..-3) <> "AA"
       _,c,s when c == "="  -> String.slice(s, 0..-2) <> "A"
@@ -68,4 +89,5 @@ defmodule Bug do
              <<x,y,z>> when z == 0 -> <<x,y>>
              <<x,y,z>> -> <<x,y,z>> end).(h)
   end
+end
 end
