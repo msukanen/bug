@@ -33,7 +33,7 @@ defmodule Bug do
     ((split(3, s)
       |> Enum.map(fn <<a,b,c>> ->
           n = ((0xff &&& a)<<<16) + ((0xff &&& b) <<<8) + (0xff &&& c)
-          e = fn (x,y) -> Enum.at(base64_set(), (0x3f &&& (x >>> y))) end
+          e = fn (v,bits) -> Enum.at(base64_set(), (0x3f &&& (v >>> bits))) end
           <<e.(n,18), e.(n,12), e.(n,6), e.(n,0)>>
         end) |> Enum.join )
       |> String.slice(0..-(String.length(pad)+1))
@@ -56,9 +56,9 @@ defmodule Bug do
       _,c,s when c == "="  -> String.slice(s, 0..-2) <> "A"
       _,_,s -> s
     end).(String.slice(s, -2..-1), String.slice(s, -1..-1), s)
-    id = fn x -> {r,_} = :binary.match(base64_str(), List.to_string([x])); r end
     [h|t] = split(4,s)
       |> Enum.map(fn <<a,b,c,d>> ->
+          id = fn x -> {r,_} = :binary.match(base64_str(), List.to_string([x])); r end
           n = (id.(a) <<< 18) + (id.(b) <<< 12) + (id.(c) <<<  6) +  id.(d)
           <<0xff &&& (n >>> 16), 0xff &&& (n >>>  8), 0xff &&&  n>>
         end)
